@@ -1,7 +1,7 @@
 # ResearchWork
-My research work, mainly on 3D reconstruction, includes Structure from Motion, SLAM, semantic reconstruction.
+My personal research work on Peking University, mainly on 3D reconstruction, includes Structure from Motion, SLAM, semantic reconstruction. I'm also interested in numerical optimization, especially large scale nonlinear optimization. If you are interested in my work, just send me an e-mail.
 
-## Structure from Motion
+## 1. Structure from Motion
 ### Viewing Graph
 
 TODO:
@@ -30,12 +30,16 @@ TODO:
 - [ ] [[SIAM 2011] Distributed Optimization and Statistical Learning via the Alternating Direction Method of Multipliers]()
 
 
-## Simultaneous Localization and Mapping
+## 2. Simultaneous Localization and Mapping
 
 
-## Semantic Reconstruction
+## 3. Semantic Reconstruction
 
-## My Open-source Code
+
+## 4. My Pulications
+
+
+## 5. My Open-source Code
 - [SuperSfM](https://github.com/AIBluefisher/SuperSfM)
 
 - [Graph Cluster](https://github.com/AIBluefisher/GraphCluster)
