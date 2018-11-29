@@ -1,5 +1,5 @@
 # ResearchWork
-My personal research work on Peking University, mainly on 3D reconstruction, includes Structure from Motion, SLAM, semantic reconstruction. I'm also interested in numerical optimization, especially large scale nonlinear optimization. If you are interested in my work, just send me an e-mail.
+My personal research work on Peking University, mainly on 3D reconstruction, includes **Structure from Motion (SfM)**, **Simultaneous Localization and Mapping (SLAM)**, **semantic reconstruction**. I'm also interested in numerical optimization, especially **large scale nonlinear optimization**, though only at the begin right now. My dream is to build the world with computer vision technologies. If you are interested in my work, just send me an e-mail. 
 
 ## 1. Structure from Motion
 ### Viewing Graph
