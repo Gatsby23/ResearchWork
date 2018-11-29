@@ -18,7 +18,6 @@ TODO:
 - [ ] [[CVPR 2008] Skeletal graphs for efficitent structure from motion](http://www.cs.cornell.edu/~snavely/projects/skeletalset/SkeletalSets_cvpr08.pdf)
 
 - [x] [[ICCV 2015] Optimizing the Viewing Graph for Structure-from-Motion](http://cs.ucsb.edu/~holl/pubs/Sweeney-2015-ICCV.pdf) 
-
 **Brief Comment:** This approach has a strong geometric verification by enforcing loop consistency, while not efficiency and may more suitable for global SfM other than other SfM approaches. Besides, the implementation is trivially.
 
 - [x] [[ECCV 2016] Graph-Based Consistent Matching for Structure-from-Motion](https://home.cse.ust.hk/~tshenaa/files/pub/eccv2016_graph_match.pdf)
