@@ -12,7 +12,7 @@ TODO:
 
 - [x] [[ECCV 2016] Graph-Based Consistent Matching for Structure-from-Motion](https://home.cse.ust.hk/~tshenaa/files/pub/eccv2016_graph_match.pdf)
 
-- [ ] [[3DV  2017] GraphMatch: Efficient Large-Scale Graph Construction for Structure from Motion](http://vfragoso.com/pdfs/graphmatch.pdf)
+- [x] [[3DV  2017] GraphMatch: Efficient Large-Scale Graph Construction for Structure from Motion](http://vfragoso.com/pdfs/graphmatch.pdf)
 
 - [ ] [[3DV  2018] Progressive Large-Scale Structure-from-Motion with Orthogonal MSTs]()
 

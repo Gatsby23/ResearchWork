@@ -1,0 +1,133 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{subfigure}
+\usepackage{multirow}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+
+\usepackage{color}
+\addtolength {\topmargin}{-1truemm}
+\textwidth 184truemm
+\textheight 235truemm
+\columnsep 4truemm
+%
+\evensidemargin -11truemm
+\oddsidemargin -11truemm
+
+
+\usepackage{subfigure} % Written by Steven Douglas Cochran
+                        % This package makes it easy to put subfigures
+                        % in your figures. i.e., "figure 1a and 1b"
+                        % Docs are in "Using Imported Graphics in LaTeX2e"
+                        % by Keith Reckdahl which also documents the graphicx
+                        % package (see above). subfigure.sty is already
+                        % installed on most LaTeX systems. The latest version
+                        % and documentation can be obtained at:
+                        % http://www.ctan.org/tex-archive/macros/latex/contrib/supported/subfigure/
+
+\usepackage{url}       
+
+\usepackage{amsmath}   
+\interdisplaylinepenalty=2500
+ 
+\usepackage{array}
+
+\begin{document}
+%
+\title{Optimization Methods in Bundle Adjustment}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Yu Chen}
+%
+\authorrunning{F. Author et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{Peking University, Department of Computer Science and Technology
+School of Electronic Engineering and Computer Science \\
+\email{1701213988@pku.edu.cn}}
+%
+\maketitle              % typeset the header of the contribution
+%
+% \begin{abstract}
+% The abstract should briefly summarize the contents of the paper in
+% 150--250 words.
+
+% \keywords{First keyword  \and Second keyword \and Another keyword.}
+% \end{abstract}
+%
+%
+%
+\section{Precursors}
+
+For optimization methods with the standard format:
+\begin{equation}
+    \label{equ:std_opt}
+	\begin{align}
+	    arg\ min\ f_0(x) \\
+    s.t f_i(x) \leq 0, i=1,...,m\\
+    h_i(x) = 0, i=1,...,p
+	\end{align}
+\end{equation}
+
+The \textbf{Lagrangian function} of (\ref{equ:std_opt}) is 
+\begin{equation}
+L(x,\lambda, \nu) = f_0(x) + \sum_{i=1}^m \lambda_i f_i(x) + \sum_{i=1}^p \nu_i h_i(x)
+\end{equation}
+$\lambda, \nu$ are called \textit{dual variables}.
+
+The \textbf{Lagrangian dual funciton} of (\ref{equ:std_opt}) is
+\begin{equation}
+g(\lambda, \nu)=inf L(x,\lambda,\nu) = inf (f_0(x) + \sum_{i=1}^m \lambda_if_i(x) + \sum_{i=1}^p \nu_ih_i(x))
+\end{equation}
+
+The \textbf{conjugate function} of (\ref{equ:std_opt}) is
+\begin{equation}
+f^*(y)=sup (y^Tx-f(x))
+\end{equation}
+
+The dual function and conjugate function have a relationship:
+\begin{equation}
+g(\lambda, \nu) = inf (f_0(x) + \lambda^T(Ax-b) + \nu^T(Cx-d))
+\end{equation}
+
+%
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+% \bibliographystyle{splncs04}
+% \bibliography{mybibliography}
+%
+% \begin{thebibliography}{8}
+% \bibitem{ref_article1}
+% Author, F.: Article title. Journal \textbf{2}(5), 99--110 (2016)
+
+% \bibitem{ref_lncs1}
+% Author, F., Author, S.: Title of a proceedings paper. In: Editor,
+% F., Editor, S. (eds.) CONFERENCE 2016, LNCS, vol. 9999, pp. 1--13.
+% Springer, Heidelberg (2016). \doi{10.10007/1234567890}
+
+% \bibitem{ref_book1}
+% Author, F., Author, S., Author, T.: Book title. 2nd edn. Publisher,
+% Location (1999)
+
+% \bibitem{ref_proc1}
+% Author, A.-B.: Contribution title. In: 9th International Proceedings
+% on Proceedings, pp. 1--2. Publisher, Location (2010)
+
+% \bibitem{ref_url1}
+% LNCS Homepage, \url{http://www.springer.com/lncs}. Last accessed 4
+% Oct 2017
+% \end{thebibliography}
+\end{document}
