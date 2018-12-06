@@ -1,7 +1,8 @@
 ## Viewing Graph Papers
 
 TODO:
-- [ ] [[CVPR 2006] Scalable Recognition with a Vocabulary Tree](https://people.eecs.berkeley.edu/~yang/courses/cs294-6/papers/nister_stewenius_cvpr2006.pdf)
+- [ ] [[ICCV 2003] video google: a text retrieval approach to object matching in videos](http://www.robots.ox.ac.uk/~vgg/publications/papers/sivic03.pdf)
+- [x] [[CVPR 2006] Scalable Recognition with a Vocabulary Tree](https://people.eecs.berkeley.edu/~yang/courses/cs294-6/papers/nister_stewenius_cvpr2006.pdf)
 
 - [ ] [[CVPR 2008] Skeletal graphs for efficitent structure from motion](http://www.cs.cornell.edu/~snavely/projects/skeletalset/SkeletalSets_cvpr08.pdf)
 
