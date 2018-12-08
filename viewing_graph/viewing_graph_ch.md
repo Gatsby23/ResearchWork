@@ -1,12 +1,22 @@
 # Viewing Graph
+首先我们来看看什么是Viewing Graph以及为什么Viewing Graph在重建中有什么作用？
 
-Let's first define what is a **Viewing Graph(VG)**.
+```
+A Viewing Graph is a graph which nodes represent images and edges represent the number of matches between two nodes.
+```
 
-***Definition**: A Viewing Graph is a graph which nodes represent images and edges represent the number of matches between two nodes.*
+**Viewing Graph** 实际上就是一个图，节点对应图片，边对应两幅图片之间的一些连接关系(可能包括匹配的数量，也包括两幅图片之间的一个相对运动关系)。Viewing Graph也叫做 **Match Graph**, 首先在[2]中提出一个比较明确的定义。
 
-**Viewing Graph** is also called a **Match Graph**, which is first adopted by [2] - a milestone work of **Structure from Motion**.
-As we know, **Feature Matching** is one of the main bottlenecks of 3D reconstruction. For sequential datasets, matching could performed only to its $k$
-previous images. However, for unordered datasets, the exhaustive matching process takes lots of time. Thus, the structure of **Viewing Graph** should be explored to reduce the number of matching. 
+我们直到，特征点匹配一直是三维重建中一个瓶颈-不仅仅在于匹配比较费时间，而且很多错误的匹配也能通过geometric verification, 从而影响重建精度。而对于单对图片的匹配来说，提出新的加速算法也不能有效的提升匹配效率。从下表可以看到，最好的算法每对图片匹配也得花0.1s(这里我们考虑的是SIFT的128维描述子，而不是ORB之类的二进制描述子，并且ORB效果上不如SIFT)。
+<div align=center> 
+
+![vt](img/match_time.png)
+
+</div>
+假设有1000张图片，那么穷举所有的情况需要做1000*(1000-1)/2次匹配。如果每次匹配花费0.1s，那么大约总共需要花费14个小时来做完这些匹配。而且这还只是1000张图片的情况！那么对于大规模的数据集(10000, 100000, ...)，在不考虑硬件方面提升的情况下，该怎么来加速匹配呢？
+
+这就是Viewing Graph要做的事 - 通过减少大量不必要的匹配(很有可能是错配)，来提升匹配速度。
+
 
 ## 1. Vocabulary Tree
 词汇树最初是用来做object recognition的，但是在三维重建中(SfM和SLAM)也被大量使用。
@@ -77,84 +87,89 @@ previous images. However, for unordered datasets, the exhaustive matching proces
 
 到此，词汇树的基本上讲解完了，更细节的内容还是见[1,2]两篇参考文献。对于vocabulary tree的实现，可以见Tianwei的工作[libvot](https://github.com/hlzz/libvot)以及Noah Snavely大神的实现[VocabTree2](https://github.com/snavely/VocabTree2)。
 
-## 2. BRIAD<sup>[2]</sup>
-In [2], vocabulary tree is used to measure the similarity of two images. For each image, the top scoring $k_1 + k_2$ images are identified, where the first $k_1$ images are used in an initial verification stage, and the additional $k_2$ images are used to enlarge the connected components. After the initial graph has been built, there may exist more than 1 connected components. For components of size 2 or more, the next $k_2$ images that suggested by the vocabulary tree are used to enlarge the graph. It should be noticed that, only image pairs that straddle two different connected components are considered. This step is called **components merging**. After component merging, the match graph is usually not dense enough to reliably produce a good reconstruction. Then, a **Query Expansion** step is proposed to enhance the match graph. Images $i$ and $j$ are connected if they have a certain minimum number of features in common. If image $i$ is connected to image $j$ and image $j$ is connected to image k, a detailed match is performed to check if image $i$ matches image $k$ (It should be noticed that, there is an error in the original paper). 
+## 2. Build Rome in a Day (BRIAD)<sup>[3]</sup>
 
-However, in that repeated query expansions lead to drift, where the context of the iamges found rapidly diverge from that of the initial image, especially as it starts examinging the neighbors of the neighbors, and so on. Although the geometric verification step in the matching process ensures that these pairs are not admitted into the graph as edgs, it greatly reduces the efficiency of the overall matching process because it tests more pairs unlikely to share edges - more query expansion, less efficient.
-___
-Although vocabulary tree help SfM pipelines find suitable image pairs to match more quickly, according to Cui [3], vocabulary tree has some disadvantages:
+在[3]中，词汇树用于计算图片之间的相似度。对于每张图片，取相似度得分前k1+k2张图片，其中的k1张图片用于初始的建图步骤，额外的k2张图片用于对连通分量(connected components)进行扩展/增大。在初始图构建完之后，可能存在多个连通分量。也就是说，整个场景肯定不是完整的。对于连通分量大于等于2的情况，接下来的k2张图片便被用于连接起这些连通分量。需要注意的是，只有处于不同连通分量之间的图片对才被考虑进来。这个过程称作"Components merging"。在component merging之后，匹配图通常还不够稠密来较为可靠地进行重建。因此，“Query Expansion"的步骤被提出来强化viewing graph. Query expansion的意思就是，如果图片i和图片j是一个正确匹配(匹配点的个数足够并且通过了geometric verification)，图片j和图片k是一个正确的匹配，那么接下来就尝试验证i和k是不是一个正确的匹配。Query expansion会在迭代一个固定的次数之后终止，也就得到了最终的一个match graph。
 
--  Constructing a vocabulary tree is computationally expensive (due to the computation of a tree encoding visual words and the iamge index) and can demand a large memory footprint. Specifically, creating the vocabulary tree requires an expensive clustering pass on a large set or subset of local image features for every node in the tree.
+但是，query expansion存在一个缺点：当query expansion重复一定次数之后，用于进行匹配的图片很快就和原图片相差很大了(也就意味着相似度不够，可能是错误的匹配)。正因为做了这些错误的匹配，query expansion会导致drift。尽管geometric verification用于筛除不满足对极几何的匹配，但是这些不必要的校验依然会降低匹配效率。
 
-- Creating an image index requires passing each of the local features of every image in a dataset through the vocabulary tree, which is also computationally expensive.
 
-- SfM pipelines have to load the image index in memory to find suitable image pairs to match in a large photo collection. In this scenario, substantial memory footprints are necessary since the image index is large as well.
+## 3. Graph-based Consistency Matching
+这篇工作尝试通过回环一致性来检测坏的匹配对。它的intuition在于：错误的匹配会造成较大的误差累积，并且一些错误的匹配能够在更长的路径中通过回环一致性检测出来。
 
-Besides, the image representation that vocabulary tree use provides limited information about matching image pairs, as is shown in the figure below, the distribution of vocabulary trees similaarity scores for matching and non-matching image pairs overlap significantly.
+为了检验回环一致性，这篇文章中定义了两个术语：Weak Consistency和Strong Consistency。Weak consistency对应于较短路径下的回环一致性(三个节点两条边，路径长度为2)，Strong consistency对应于较长路径下的回环一致性 (路径长度不是一个定值)。consistency指的是图片间的相对运动通过矩阵链乘得到的结果和单位阵之差的范数应当小于某个阈值。
 
+为了找到一个一致的match graph，需要对以下三个性能标准进行平衡:
+
+- 完整性 (completeness)
+- 效率 (efficiency)
+- 一致性 (consistency)
+
+通过这三个标准，Shen [4]的方法可以找到一个能够进行完整重建的匹配对的下界。该算法包含下面三个步骤。
+
+### 3.1 Match Graph Initilization
+Shen [4]使用词汇树得到的相似度评分作为一个初始图的权值 (实际上该权值的定义没有这么简单，这里为了简便就这样写，具体可以见参考文献)，然后构建出一棵最小生成树。需要注意的是，如果图片集合包含一些孤立的视图(singleton views)或者分块的场景，图的初始化过程可能会耗费比较长的时间，因为我们需要遍历每一条边来尝试把singleton image加入到图里面。这个图初始化算法比较简单，可以通过对Kruskal算法做略微的修改得到。
+
+
+## 3.2 Graph Expansion by Strong Triplets
+
+这个过程称作三元组扩展。其实思路和[3]的query expansion差不多： 如果图片i和图片j是一个正确匹配，图片j和图片k是一个正确的匹配，那么接下来就尝试验证i和k是不是一个正确的匹配。不过稍有不同的是，这个过程还验证了loop consistency。而且，为了保证效率，triplets expansion的过程只做三次(因为做所有的triplets expansion的时间复杂度是O(n^3))。整个过程如下图所示：
+
+<div align=center> 
+
+![ge](img/ge.png)
+
+</div>
+
+### 3.3 Component Merging
+这一步是对triplets expansion步骤的一个扩展。在triplets expansion中，只有局部的几何信息被考虑到，这意味着并没有考虑一个全局的回环结构，因此也就无法反映出整个数据集的潜在的位姿图。除此之外，更长的回环被忽略掉了。因此，component merging这一步被提出来强化之前的match graph。
+
+通过community detection，图被划分成几块区域，区域内的图片有着较为紧密的联系，区域之间的图片联系较弱。因此，组间的更长的路径被用于检验回环一致性。假设图片i在编号为k1的组内，图片j在编号为k2的组内，接着，使用广度优先搜索算法寻找这两张图片的最短路径(这个时候，边的权值设为1)，然后所有边之间的相对运动的矩阵表示便被用于检验strong consistency.
+
+需要注意的是，一般情况下，图割算法可以作为community detection的一个代替。
+
+## 4. GraphMatch
+尽管词汇树能够用于快速寻找潜在的匹配对，但是，词汇树仍然存在一些缺点：
+
+- 构建一棵词汇树的代价比较大(当然，现在有一些训练好的词汇树可以用)并且需要较大的内存。
+
+- 在大规模的图片中，SfM系统需要将所有图片的索引加载到内存中来寻找合适的图片对进行匹配。这种情况下，潜在的内存开系哦啊依然非常大
+
+除此之外，词汇树并不是一种很可信的寻找正确匹配的方法 - 用词汇树来对图片进行表示对于匹配来说提供的信息非常有限，就像下图所示，词汇树的相似度评分对于匹配和非匹配的概率分布图来说，重合度非常大(也就是说，词汇树并不能有效区分匹配和不匹配的图片)。
 <div align=center> 
 
 ![vt](img/vt.png)
 
 </div>
 
-## 3. Graph-based Consistency Matching
-
-This work try to detect bad matches by checking loop consistency. The ituition is: *errorneous matches causes the accumulation of error, and longer loops causes larger drifting.* 
-
-In order to check loop consistency, two terms are defined: *Weak Consistency* and *Strong Consistency*.
-
-To find a consistent match graph, three performance criteria need to be balanced:
-- Completeness
-- Efficiency
-- Consistency
-
-The algorithm follows three steps, which would be introduced later.
-
-### 3.1 Match Graph Initialization
-Shen [3] uses the similarity score computed by vocabulary tree to construct a minimum spanning tree. Noticed that, if the iamge collection contains singleton views or separated scenes, the initialization process may be unreasonably long since it needs to explore every possible edge to join the singleton image. The algorithm first orders the edge set by weights in increasing order and then prorbes the most probable pair that can join two disjoint sets uing the union-find data structure. The algorithm can be implemented with a little modify of the Kruskal algorithm.
-
-### 3.2 Graph Expansion by Strong Triplets
-
-3-length loops is referred as *strong triplets*, and *weak triplets* do not form closed loops.
-
-While the initial graph contains a skeletal of scenes, it lacks of many details. Strong consistency is hard to satisfy because the enumeration of all loops in a graph costs exponential time. Weak consistency would be relatively easy to achieve, but the tiem complexity is O(n^3) in the worst case. Consider the efficiency, 3 iterations of graph expansion is used to enhance the graph. Every weak triplet is traversed at each iteration, if the non-closed edge pass the matching criterion (enough inlier matches and pass the geometric verification), then it forms a strong triplet - just as the figure shows:
-
-![ge](img/ge.png)
-
-### 3.3 Component Merging
-
-In strong triplets expansion step, only local geometric infomation is considered, which means without closed-loop structures at a global scale, then does not reflect the genuine pose graph of the dataset. 
-Besides, the consistency of longer loops is neglected. Then, component merging is proposed to enhance that.
-
-With community detection technique, graph is patitioned into several parts with denser connections inside and sparser connections outside. Then, group-wise longer loop consistency is verified. Suppose node i in group k1, j in group k2, then, a breadth-first-search algorithm is used to find the shortest path, then verify thee strong consistency.
-
-## 4. GraphMatch
-Inspired by PatchMatch algorithm, GraphMatch [4] use a score computed from the distance between Fisher vectors of any two images. In their experiments, <u>Fisher vector distances are faster to compute and more indicative of a possible match than vocabulary tree similarity scores.</u> Besides, Graph Match uses a similar iterative "sample-and-propagate" algorithm to replace the query expansion step. In "sample-and-propagate" of PatchMatch, the correspondences of each patch are initialized to point to random pathces in the sampling step. Then in the propagation step, the valid correspondences found in the previous step are propagated to their neighbors. In GraphMatch, the sampling stage uses Fisher scores to search for matching image pairs more effectively. The propagation stage then uses the current graph of matched image pairs to explore the neighbors of images belonging to geometrically verified image pairs. GraphMatch is able to efficiently determine which image pairs are likely to produce a good match, avoiding unnecessary overhead in attempting to match image pairs which are unlikely to match.
-
-In GraphMatch, two better priors are explored for edge-finding by studying metrics for global image similarity - VLAD and Fisher vectors. As the figure shows, Fisher scores give the best separation between the distributions of edges and non-edges, meaning they provide better guidance towards sampling edges - quite similar with query expansion - GraphMatch uses all the current, direct neighbors of a vertex (the set of vertices that currently share a valid edge with the vertex) as the potential neighborhood of candidates that will be tested for more matches. Then, GraphMatch identifies the candidate image pairs to test, ranks them besed on their Fisher distances, and selects a subset as the pairs to geometrically verify.
-
-
+因此， GraphMatch[4]通过实验，对比使用了一些比词汇树更能有效地区分匹配和不配的图片对的方法。他们的实验结果表明，
+```
+Fisher vector distances are faster to compute and more indicative of a possible match than vocabulary tree similarity scores.
+```
+如下面的概率分布图所示：
 <div align=center> 
 
 ![vt](img/compare.png)
 
 </div>
 
-The *"propagation"* strategy in GraphMatch is that, if two vertices A and B are neighbors, the neighbors of B might also be neighbors for A and vice versa.
+GraphMatch算法分为三个步骤(实际上和之前的算法大同小异)：
 
-Now, it's quite clear that GraphMatch can be organized as three steps, described in the follow sections.
+### 4.1 预处理 (Pre-processing)
+首先，计算SIFT特征以及描述子，然后，使用Fisher-vector encoder来计算Fisher vector。在每一张图片的Fisher vector都计算完之后，GraphMatch对每对图片都计算一个distance matrix。最后，这些Fisher distances用来对所有图片进行一个相似度的排名。越小的Fisher distance意味着越高的相似度。
 
-### 4.1 Pre-processing
-GraphMatch first pre-computes SIFT features, then constructs a database of image features by taking a random sample of features for every image in the photo collection. Then, if estimates the cluster priors, diagonal-covariance matrices, and centroids that parametrize the Gaussian Mixture Model (GMM). Using the estimated GMM, GraphMatch computes a Fisher vector for every image using a Fisher-vector encoder. Once every image has its Fisher vector, GraphMatch computes a distance matrix between every pair of images. Finally, it uses the Fisher distances to create a list for every image that ranks all other images based on proximity to the given image. Smaller Fisher distances, more similar to the queried images.
+### 4.2 采样和冒泡 (Sampling and Propagation)
 
-### 4.2 Sampling Step
+实际上，这里的采样和冒泡个人觉得仅仅是这篇文章包装之后的说法，和前面两篇论文的做法并无本质上的区别。
 
-GraphMatch uses the ranked lists for every image that were pre-computed in the pre-processing step and pulls a fixed number of candidate iamges from each list at every iteration to be used for sampling. Once the list of sampling pairs has been computed for all vertices in the graph, GraphMatch passes it to a function that will test each one for edges using geometric verification.
+采样是指，对于之前排名的结果，每张图片都选一个固定的值来选取图片进行匹配。而冒泡指的是(还是引用原文吧，翻译感觉没必要):
+```
+Given a pair *A* and *B* that share an edge, the propagation step takes the top ranked neighbors of B and tests them against *A* and vice-versa. And GraphMatch propagates only from vertices that have less that *MAXNUMNEIGHBORS* for termination criterion.
+```
 
-### 4.3 Propagation Step
+## 5. 实现
 
-The propagation step loops over every pair of vertices with known edges in graph. Given a pair *A* and *B* that share an edge, the propagation step takes the top ranked neighbors of B and tests them against *A* and vice-versa. And GraphMatch propagates only from vertices that have less that *MAXNUMNEIGHBORS* for termination criterion.
+自己目前还没找到关于viewing graph的一个开源实现。因为viewing graph对于构建大规模重建系统确实是必要的，因此自己也正在实现。代码可见 [XFeatures]()
 
 ## References
 [1] Sivic J, Zisserman A. Video Google: A text retrieval approach to object matching in videos[C]//null. IEEE, 2003: 1470.
